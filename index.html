@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-width=1.0">
+    <title>Sumit & Dnyaneshwari's Gallery</title>
+    <!-- Load Google APIs -->
+    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+    
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; max-width: 1000px; margin: auto; }
+        #content { display: none; }
+        .controls { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+        .gallery img { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .btn { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; margin-right: 10px;}
+        .btn:hover { background: #0056b3; }
+        h1 { color: #333; font-size: 24px;}
+    </style>
+</head>
+<body>
+
+    <h1>Our Private Gallery</h1>
+    
+    <button id="authorize_button" class="btn" onclick="handleAuthClick()">Log In with Google</button>
+    <button id="signout_button" class="btn" onclick="handleSignoutClick()" style="display: none;">Log Out</button>
+
+    <div id="content">
+        <div class="controls">
+            <input type="file" id="fileUpload" accept="image/*" style="margin-bottom: 10px; display: block;">
+            <button class="btn" onclick="uploadFile()">Upload Photo</button>
+        </div>
+        <div class="gallery" id="galleryContainer"></div>
+    </div>
+
+    <script>
+        // --- YOUR CONFIGURATION ---
+        const CLIENT_ID = '408873144466-pjnjq4ndsm9mspsqaej30flvkqtv9134.apps.googleusercontent.com'; 
+        const FOLDER_ID = '1sLEpkViuTrTKUBjpSsFNCpY75X7gfsgk'; 
+        const allowedEmails = ['sumit.devlogic@gmail.com', 'devlogic.dnyaneshwari@gmail.com'];
+
+        // --- GOOGLE API ENGINE ---
+        const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+        const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly';
+
+        let tokenClient, gapiInited = false, gisInited = false, accessToken = null;
+
+        function gapiLoaded() {
+            gapi.load('client', () => {
+                gapi.client.init({}).then(() => {
+                    gapi.client.load(DISCOVERY_DOC).then(() => { gapiInited = true; });
+                });
+            });
+        }
+
+        function gisLoaded() {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: (tokenResponse) => {
+                    if (tokenResponse.error !== undefined) throw (tokenResponse);
+                    accessToken = tokenResponse.access_token;
+                    verifyUserEmail(); 
+                },
+            });
+            gisInited = true;
+        }
+
+        function handleAuthClick() {
+            if (gapiInited && gisInited) tokenClient.requestAccessToken({prompt: 'consent'});
+        }
+
+        function handleSignoutClick() {
+            const token = gapi.client.getToken();
+            if (token !== null) {
+                google.accounts.oauth2.revoke(token.access_token);
+                gapi.client.setToken('');
+                document.getElementById('content').style.display = 'none';
+                document.getElementById('authorize_button').style.display = 'inline-block';
+                document.getElementById('signout_button').style.display = 'none';
+                document.getElementById('galleryContainer').innerHTML = '';
+            }
+        }
+
+        async function verifyUserEmail() {
+            try {
+                let response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                let userInfo = await response.json();
+                
+                if (allowedEmails.includes(userInfo.email)) {
+                    document.getElementById('authorize_button').style.display = 'none';
+                    document.getElementById('signout_button').style.display = 'inline-block';
+                    document.getElementById('content').style.display = 'block';
+                    loadGallery(); 
+                } else {
+                    alert("Access Denied: Your email is not authorized.");
+                    handleSignoutClick();
+                }
+            } catch (err) { console.error("Error verifying email", err); }
+        }
+
+        async function loadGallery() {
+            const container = document.getElementById('galleryContainer');
+            container.innerHTML = 'Loading photos...';
+            
+            try {
+                let response = await fetch(`https://www.googleapis.com/drive/v3/files?q='${FOLDER_ID}'+in+parents&fields=files(id,name,thumbnailLink)&pageSize=100`, {
+                    headers: { 'Authorization': 'Bearer ' + accessToken }
+                });
+                let data = await response.json();
+                
+                container.innerHTML = '';
+                if (data.files && data.files.length > 0) {
+                    data.files.forEach(file => {
+                        let img = document.createElement('img');
+                        img.src = file.thumbnailLink ? file.thumbnailLink.replace('=s220', '=s600') : ''; 
+                        container.appendChild(img);
+                    });
+                } else {
+                    container.innerHTML = '<p>No photos yet. Upload the first one!</p>';
+                }
+            } catch (error) {
+                console.error("Gallery load failed", error);
+                container.innerHTML = '<p>Error loading photos.</p>';
+            }
+        }
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileUpload');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert("Please select a photo first.");
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const metadata = { 'name': file.name, 'parents': [FOLDER_ID] };
+            const form = new FormData();
+            
+            form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+            form.append('file', file);
+
+            document.getElementById('galleryContainer').innerHTML = 'Uploading...';
+
+            try {
+                let response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + accessToken },
+                    body: form
+                });
+                
+                let result = await response.json();
+                if (result.id) {
+                    fileInput.value = ""; 
+                    loadGallery(); 
+                }
+            } catch (error) {
+                console.error("Upload failed", error);
+                alert("Upload failed.");
+            }
+        }
+    </script>
+</body>
+</html>
