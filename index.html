@@ -28,7 +28,8 @@
 
     <div id="content">
         <div class="controls">
-            <input type="file" id="fileUpload" accept="image/*" style="margin-bottom: 10px; display: block;">
+            <input type="file" id="fileUpload" accept="image/*" multiple style="margin-bottom: 10px; display: block;">
+            
             <button class="btn" onclick="uploadFile()">Upload Photo</button>
         </div>
         <div class="gallery" id="galleryContainer"></div>
@@ -129,35 +130,43 @@
             }
         }
 
-        async function uploadFile() {
+                async function uploadFile() {
             const fileInput = document.getElementById('fileUpload');
             if (!fileInput.files || fileInput.files.length === 0) {
-                alert("Please select a photo first.");
+                alert("Please select at least one photo.");
                 return;
             }
 
-            const file = fileInput.files[0];
-            const metadata = { 'name': file.name, 'parents': [FOLDER_ID] };
-            const form = new FormData();
-            
-            form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-            form.append('file', file);
-
-            document.getElementById('galleryContainer').innerHTML = 'Uploading...';
+            const files = fileInput.files;
+            document.getElementById('galleryContainer').innerHTML = `Uploading ${files.length} photo(s)... Please wait.`;
 
             try {
-                let response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                    method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + accessToken },
-                    body: form
-                });
-                
-                let result = await response.json();
-                if (result.id) {
-                    fileInput.value = ""; 
-                    loadGallery(); 
+                // Loop through and upload each selected photo
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const metadata = { 'name': file.name, 'parents': [FOLDER_ID] };
+                    const form = new FormData();
+                    
+                    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+                    form.append('file', file);
+
+                    await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + accessToken },
+                        body: form
+                    });
                 }
+                
+                // Clear the input and reload the gallery after all uploads finish
+                fileInput.value = ""; 
+                loadGallery(); 
             } catch (error) {
+                console.error("Upload failed", error);
+                alert("An error occurred during upload.");
+                loadGallery(); // Reload anyway to show whatever made it through
+            }
+                }
+        catch (error) {
                 console.error("Upload failed", error);
                 alert("Upload failed.");
             }
