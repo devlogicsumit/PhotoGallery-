@@ -3,53 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-width=1.0">
-    <title>Sumit & Dnyaneshwari's Gallery</title>
-    <!-- Load Google APIs -->
+    <title>Our Private Gallery</title>
     <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
     
     <style>
-        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; max-width: 1000px; margin: auto; }
-        #content { display: none; }
-        .controls { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-        .gallery img { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .btn { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; margin-right: 10px;}
-        .btn:hover { background: #0056b3; }
-        h1 { color: #333; font-size: 24px;}
+        /* Modern Minimalist & Soft Aesthetic */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            /* Soft fuchsia and bluish minimalist gradient */
+            background: linear-gradient(135deg, #fdfbfb 0%, #f3e6e8 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #4a4a4a;
+        }
+
+        /* Glassmorphism Containers */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            padding: 40px;
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            margin-top: 10vh;
+        }
+
+        h1, h2 { color: #5a4a4a; margin-bottom: 20px; font-weight: 600; }
+
+        /* Buttons */
+        .btn {
+            background: #d4a5a5; /* Soft muted pink/brown */
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(212, 165, 165, 0.4);
+        }
+        .btn:hover { background: #c39494; transform: translateY(-2px); }
+        .btn-outline {
+            background: transparent;
+            color: #d4a5a5;
+            border: 2px solid #d4a5a5;
+            box-shadow: none;
+        }
+        .btn-outline:hover { background: #d4a5a5; color: white; }
+
+        /* Screens */
+        #login_screen, #pin_screen, #gallery_screen { display: none; width: 100%; max-width: 1000px; }
+        #login_screen { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        
+        /* PIN Pad Styles */
+        .pin-display {
+            font-size: 2rem;
+            letter-spacing: 15px;
+            margin-bottom: 30px;
+            color: #5a4a4a;
+            font-weight: bold;
+            height: 40px;
+        }
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            max-width: 250px;
+            margin: 0 auto;
+        }
+        .num-btn {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(200, 200, 200, 0.3);
+            border-radius: 50%;
+            width: 65px;
+            height: 65px;
+            font-size: 20px;
+            color: #5a4a4a;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        }
+        .num-btn:hover, .num-btn:active { background: #e8d5d5; }
+
+        /* Gallery Styles */
+        #gallery_screen { padding: 20px; flex-direction: column; align-items: center; margin-top: 20px; }
+        .gallery-header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .upload-section { 
+            background: rgba(255, 255, 255, 0.6); 
+            padding: 20px; 
+            border-radius: 15px; 
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .upload-section input[type="file"] { font-size: 14px; }
+        
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            width: 100%;
+        }
+        .gallery img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .gallery img:hover { transform: scale(1.03); }
+        
+        /* Loading text */
+        .status-text { color: #888; font-size: 14px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <h1>Our Private Gallery</h1>
-    
-    <button id="authorize_button" class="btn" onclick="handleAuthClick()">Log In with Google</button>
-    <button id="signout_button" class="btn" onclick="handleSignoutClick()" style="display: none;">Log Out</button>
-
-    <div id="content">
-        <div class="controls">
-            <input type="file" id="fileUpload" accept="image/*" multiple style="margin-bottom: 10px; display: block;">
-            <button class="btn" onclick="uploadFile()">Upload Photos</button>
+    <!-- 1. Google Login Screen -->
+    <div id="login_screen">
+        <div class="glass-card">
+            <h1>Our Gallery</h1>
+            <p style="margin-bottom: 25px; color: #777;">Sign in to access your memories.</p>
+            <button id="authorize_button" class="btn" onclick="handleAuthClick()">Log In with Google</button>
+            <div id="login_status" class="status-text"></div>
         </div>
+    </div>
+
+    <!-- 2. PIN Pad Screen -->
+    <div id="pin_screen">
+        <div class="glass-card">
+            <h2>Enter PIN</h2>
+            <div class="pin-display" id="pinDisplay"></div>
+            <div class="numpad">
+                <button class="num-btn" onclick="pressPin('1')">1</button>
+                <button class="num-btn" onclick="pressPin('2')">2</button>
+                <button class="num-btn" onclick="pressPin('3')">3</button>
+                <button class="num-btn" onclick="pressPin('4')">4</button>
+                <button class="num-btn" onclick="pressPin('5')">5</button>
+                <button class="num-btn" onclick="pressPin('6')">6</button>
+                <button class="num-btn" onclick="pressPin('7')">7</button>
+                <button class="num-btn" onclick="pressPin('8')">8</button>
+                <button class="num-btn" onclick="pressPin('9')">9</button>
+                <button class="num-btn" onclick="clearPin()">C</button>
+                <button class="num-btn" onclick="pressPin('0')">0</button>
+                <button class="num-btn" onclick="deletePin()">⌫</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Gallery Screen -->
+    <div id="gallery_screen">
+        <div class="gallery-header">
+            <h2>Our Memories</h2>
+            <button class="btn btn-outline" onclick="handleSignoutClick()">Lock & Log Out</button>
+        </div>
+        
+        <div class="upload-section">
+            <input type="file" id="fileUpload" accept="image/*" multiple>
+            <button class="btn" onclick="uploadFile()">Upload Photos</button>
+            <div id="upload_status" class="status-text"></div>
+        </div>
+
         <div class="gallery" id="galleryContainer"></div>
     </div>
 
     <script>
-        // --- YOUR CONFIGURATION ---
+        // --- CONFIGURATION ---
         const CLIENT_ID = '408873144466-pjnjq4ndsm9mspsqaej30flvkqtv9134.apps.googleusercontent.com'; 
         const FOLDER_ID = '1sLEpkViuTrTKUBjpSsFNCpY75X7gfsgk'; 
         const allowedEmails = ['sumit.devlogic@gmail.com', 'devlogic.dnyaneshwari@gmail.com'];
+        const CORRECT_PIN = '0508';
 
         // --- GOOGLE API ENGINE ---
         const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
         const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/userinfo.email';
 
         let tokenClient, gapiInited = false, gisInited = false, accessToken = null;
+        let enteredPin = '';
 
         function gapiLoaded() {
             gapi.load('client', () => {
                 gapi.client.init({}).then(() => {
-                    gapi.client.load(DISCOVERY_DOC).then(() => { gapiInited = true; });
+                    gapi.client.load(DISCOVERY_DOC).then(() => { 
+                        gapiInited = true; 
+                        checkPersistedAuth(); // Check for saved login on load
+                    });
                 });
             });
         }
@@ -61,26 +215,66 @@
                 callback: (tokenResponse) => {
                     if (tokenResponse.error !== undefined) throw (tokenResponse);
                     accessToken = tokenResponse.access_token;
+                    
+                    // Save token to localStorage (expires in ~1 hour)
+                    localStorage.setItem('gdrive_token', accessToken);
+                    localStorage.setItem('gdrive_expiry', Date.now() + (3500 * 1000));
+                    
                     verifyUserEmail(); 
                 },
             });
             gisInited = true;
+            checkPersistedAuth();
+        }
+
+        // --- PERSISTENCE LOGIC ---
+        function checkPersistedAuth() {
+            if (!gapiInited || !gisInited) return; // Wait until both APIs are ready
+            
+            const savedToken = localStorage.getItem('gdrive_token');
+            const expiry = localStorage.getItem('gdrive_expiry');
+            
+            if (savedToken && expiry && Date.now() < parseInt(expiry)) {
+                // Token is saved and still valid
+                accessToken = savedToken;
+                document.getElementById('login_screen').style.display = 'flex';
+                document.getElementById('authorize_button').style.display = 'none';
+                document.getElementById('login_status').innerText = 'Restoring session...';
+                verifyUserEmail();
+            } else {
+                // No valid token, show normal login
+                document.getElementById('login_screen').style.display = 'flex';
+                document.getElementById('authorize_button').style.display = 'inline-block';
+                document.getElementById('login_status').innerText = '';
+            }
         }
 
         function handleAuthClick() {
-            if (gapiInited && gisInited) tokenClient.requestAccessToken({prompt: 'consent'});
+            if (gapiInited && gisInited) {
+                tokenClient.requestAccessToken({prompt: 'consent'});
+            }
         }
 
         function handleSignoutClick() {
-            const token = gapi.client.getToken();
-            if (token !== null) {
-                google.accounts.oauth2.revoke(token.access_token);
+            localStorage.removeItem('gdrive_token');
+            localStorage.removeItem('gdrive_expiry');
+            sessionStorage.removeItem('pin_unlocked');
+            
+            if (accessToken) {
+                google.accounts.oauth2.revoke(accessToken);
                 gapi.client.setToken('');
-                document.getElementById('content').style.display = 'none';
-                document.getElementById('authorize_button').style.display = 'inline-block';
-                document.getElementById('signout_button').style.display = 'none';
-                document.getElementById('galleryContainer').innerHTML = '';
+                accessToken = null;
             }
+            
+            document.getElementById('gallery_screen').style.display = 'none';
+            document.getElementById('pin_screen').style.display = 'none';
+            
+            document.getElementById('authorize_button').style.display = 'inline-block';
+            document.getElementById('login_status').innerText = '';
+            document.getElementById('login_screen').style.display = 'flex';
+            
+            enteredPin = '';
+            updatePinDisplay();
         }
 
         async function verifyUserEmail() {
@@ -88,23 +282,77 @@
                 let response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
                     headers: { 'Authorization': `Bearer ${accessToken}` }
                 });
+                
+                if (!response.ok) throw new Error("Token invalid");
+                
                 let userInfo = await response.json();
                 
                 if (allowedEmails.includes(userInfo.email)) {
-                    document.getElementById('authorize_button').style.display = 'none';
-                    document.getElementById('signout_button').style.display = 'inline-block';
-                    document.getElementById('content').style.display = 'block';
-                    loadGallery(); 
+                    document.getElementById('login_screen').style.display = 'none';
+                    
+                    // Check if PIN was already entered in this tab session
+                    if (sessionStorage.getItem('pin_unlocked') === 'true') {
+                        showGallery();
+                    } else {
+                        document.getElementById('pin_screen').style.display = 'flex';
+                    }
                 } else {
                     alert("Access Denied: Your email is not authorized.");
                     handleSignoutClick();
                 }
-            } catch (err) { console.error("Error verifying email", err); }
+            } catch (err) { 
+                console.error("Session expired or invalid.", err); 
+                handleSignoutClick(); // Force re-login if token check fails
+            }
+        }
+
+        // --- PIN PAD LOGIC ---
+        function pressPin(num) {
+            if (enteredPin.length < 4) enteredPin += num;
+            updatePinDisplay();
+            
+            if (enteredPin.length === 4) {
+                setTimeout(() => {
+                    if (enteredPin === CORRECT_PIN) {
+                        sessionStorage.setItem('pin_unlocked', 'true');
+                        document.getElementById('pin_screen').style.display = 'none';
+                        showGallery();
+                    } else {
+                        alert("Incorrect PIN");
+                        clearPin();
+                    }
+                }, 100); // Tiny delay so the user sees the 4th dot appear
+            }
+        }
+
+        function clearPin() {
+            enteredPin = '';
+            updatePinDisplay();
+        }
+
+        function deletePin() {
+            enteredPin = enteredPin.slice(0, -1);
+            updatePinDisplay();
+        }
+
+        function updatePinDisplay() {
+            // Show bullet points for entered numbers, underscores for remaining
+            let displayString = '';
+            for (let i = 0; i < 4; i++) {
+                displayString += (i < enteredPin.length) ? '● ' : '— ';
+            }
+            document.getElementById('pinDisplay').innerText = displayString.trim();
+        }
+
+        // --- GALLERY ENGINE ---
+        function showGallery() {
+            document.getElementById('gallery_screen').style.display = 'flex';
+            loadGallery();
         }
 
         async function loadGallery() {
             const container = document.getElementById('galleryContainer');
-            container.innerHTML = 'Loading photos...';
+            container.innerHTML = '<p class="status-text">Loading photos...</p>';
             
             try {
                 let response = await fetch(`https://www.googleapis.com/drive/v3/files?q='${FOLDER_ID}'+in+parents&fields=files(id,name,thumbnailLink)&pageSize=100`, {
@@ -116,27 +364,29 @@
                 if (data.files && data.files.length > 0) {
                     data.files.forEach(file => {
                         let img = document.createElement('img');
-                        img.src = file.thumbnailLink ? file.thumbnailLink.replace('=s220', '=s600') : ''; 
+                        img.src = file.thumbnailLink ? file.thumbnailLink.replace('=s220', '=s800') : ''; 
                         container.appendChild(img);
                     });
                 } else {
-                    container.innerHTML = '<p>No photos yet. Upload the first one!</p>';
+                    container.innerHTML = '<p class="status-text">No photos yet. Upload the first one!</p>';
                 }
             } catch (error) {
                 console.error("Gallery load failed", error);
-                container.innerHTML = '<p>Error loading photos.</p>';
+                container.innerHTML = '<p class="status-text">Error loading photos.</p>';
             }
         }
 
         async function uploadFile() {
             const fileInput = document.getElementById('fileUpload');
+            const statusText = document.getElementById('upload_status');
+            
             if (!fileInput.files || fileInput.files.length === 0) {
                 alert("Please select at least one photo.");
                 return;
             }
 
             const files = fileInput.files;
-            document.getElementById('galleryContainer').innerHTML = `Uploading ${files.length} photo(s)... Please wait.`;
+            statusText.innerText = `Uploading ${files.length} photo(s)... Please wait.`;
 
             try {
                 for (let i = 0; i < files.length; i++) {
@@ -155,13 +405,19 @@
                 }
                 
                 fileInput.value = ""; 
+                statusText.innerText = 'Upload complete!';
+                setTimeout(() => { statusText.innerText = ''; }, 3000);
                 loadGallery(); 
             } catch (error) {
                 console.error("Upload failed", error);
                 alert("An error occurred during upload.");
+                statusText.innerText = '';
                 loadGallery(); 
             }
         }
+        
+        // Initialize the PIN display on load
+        updatePinDisplay();
     </script>
 </body>
 </html>
