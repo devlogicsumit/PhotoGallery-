@@ -29,8 +29,7 @@
     <div id="content">
         <div class="controls">
             <input type="file" id="fileUpload" accept="image/*" multiple style="margin-bottom: 10px; display: block;">
-            
-            <button class="btn" onclick="uploadFile()">Upload Photo</button>
+            <button class="btn" onclick="uploadFile()">Upload Photos</button>
         </div>
         <div class="gallery" id="galleryContainer"></div>
     </div>
@@ -44,7 +43,6 @@
         // --- GOOGLE API ENGINE ---
         const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
         const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/userinfo.email';
-        
 
         let tokenClient, gapiInited = false, gisInited = false, accessToken = null;
 
@@ -130,7 +128,7 @@
             }
         }
 
-                async function uploadFile() {
+        async function uploadFile() {
             const fileInput = document.getElementById('fileUpload');
             if (!fileInput.files || fileInput.files.length === 0) {
                 alert("Please select at least one photo.");
@@ -141,7 +139,6 @@
             document.getElementById('galleryContainer').innerHTML = `Uploading ${files.length} photo(s)... Please wait.`;
 
             try {
-                // Loop through and upload each selected photo
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
                     const metadata = { 'name': file.name, 'parents': [FOLDER_ID] };
@@ -157,18 +154,12 @@
                     });
                 }
                 
-                // Clear the input and reload the gallery after all uploads finish
                 fileInput.value = ""; 
                 loadGallery(); 
             } catch (error) {
                 console.error("Upload failed", error);
                 alert("An error occurred during upload.");
-                loadGallery(); // Reload anyway to show whatever made it through
-            }
-                }
-        catch (error) {
-                console.error("Upload failed", error);
-                alert("Upload failed.");
+                loadGallery(); 
             }
         }
     </script>
